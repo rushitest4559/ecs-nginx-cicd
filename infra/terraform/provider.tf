@@ -19,7 +19,7 @@ terraform {
 }
 
 provider "aws" {
-  region = var.region
+  region = "us-east-1"
 
   # Standard Tags: Every resource created will automatically have these
   default_tags {
