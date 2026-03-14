@@ -1,0 +1,74 @@
+name: Deploy Nginx to ECS
+
+on:
+  push:
+    paths:
+      - 'app/**' # Only triggers when files inside the 'app' folder change
+    branches:
+      - main
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
+env:
+  AWS_REGION: us-east-1                   
+  ECR_REPOSITORY: nginx-repo             
+  ECS_SERVICE: nginx-service             
+  ECS_CLUSTER: nginx-cluster             
+  CONTAINER_NAME: nginx                  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Authenticate with AWS via OIDC
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::019138829474:role/github-oidc-role # Replace with your Role ARN
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 2. Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 3. Setup Docker Buildx (Required for caching)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. Build and Push Image with GHA Cache
+      - name: Build and Push to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 5. Update ECS Task Definition
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition --task-definition nginx-task --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+      # 6. Deploy to ECS
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
