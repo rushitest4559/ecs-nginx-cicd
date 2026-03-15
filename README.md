@@ -1,4 +1,4 @@
-[GitHub Workflow](https://github.com/rushitest4559/ecs-nginx-cicd/actions/workflows/deploy.yml/badge.svg)(https://github.com/rushitest4559/ecs-nginx-cicd/actions)
+[![GitHub Workflow](https://github.com/rushitest4559/ecs-nginx-cicd/actions/workflows/deploy.yml/badge.svg)](https://github.com/rushitest4559/ecs-nginx-cicd/actions)
 
 # AWS ECS CI/CD | Terraform + GitHub Actions
 
