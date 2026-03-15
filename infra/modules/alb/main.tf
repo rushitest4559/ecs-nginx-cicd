@@ -18,10 +18,10 @@ resource "aws_lb_target_group" "this" {
     path = "/"
     port = 80
     protocol = "HTTP"
-    healthy_threshold = 3
-    unhealthy_threshold = 3
+    healthy_threshold = 2
+    unhealthy_threshold = 2
     timeout = 5
-    interval = 30
+    interval = 10
     matcher = "200"
   }
 }

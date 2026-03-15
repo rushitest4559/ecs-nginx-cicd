@@ -62,6 +62,17 @@ resource "aws_ecs_service" "nginx" {
   task_definition = aws_ecs_task_definition.nginx.arn
   desired_count   = 2
 
+  # 1. Aggressive Deployment Configuration
+  # This allows ECS to spin up 2 new tasks BEFORE killing the 2 old ones.
+  # Total tasks during deployment = 4.
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
+
+  # 2. Reduce Health Check Grace Period
+  # Default is often 0 or very high. Set this to the actual time your Nginx 
+  # container takes to start (usually < 15s).
+  health_check_grace_period_seconds = 20
+
   network_configuration {
     subnets         = var.private_subnet_ids
     security_groups = [aws_security_group.ecs_tasks.id]
