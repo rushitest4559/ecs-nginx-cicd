@@ -6,6 +6,7 @@ on:
       - 'app/**' # Only triggers when files inside the 'app' folder change
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   id-token: write # Required for OIDC
